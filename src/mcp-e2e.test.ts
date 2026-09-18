@@ -1,11 +1,10 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import type { Server } from "node:http";
 import { serve } from "@hono/node-server";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { app } from "./app";
 
-let server: Server;
+let server: ReturnType<typeof serve>;
 let baseUrl: string;
 const realFetch = globalThis.fetch;
 
