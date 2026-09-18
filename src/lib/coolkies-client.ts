@@ -1,3 +1,5 @@
+import { readEnvOrDefault } from "./env";
+
 export class CoolkiesApiError extends Error {
   constructor(
     public status: number,
@@ -18,7 +20,7 @@ export async function callCoolkiesApi(
   path: string,
   options: CallOptions = {},
 ): Promise<unknown> {
-  const baseUrl = process.env.COOLKIES_BASE_URL ?? "http://localhost:3000";
+  const baseUrl = readEnvOrDefault("COOLKIES_BASE_URL", "http://localhost:3000");
 
   const response = await fetch(`${baseUrl}${path}`, {
     method: options.method ?? "GET",

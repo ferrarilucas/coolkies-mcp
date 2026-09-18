@@ -4,6 +4,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
 import { registerTools } from "./tools";
+import { readEnvOrDefault } from "./lib/env";
 
 export const app = new Hono();
 
@@ -20,8 +21,8 @@ app.use(
 app.get("/health", (c) => c.json({ status: "ok" }));
 
 app.get("/.well-known/oauth-protected-resource", (c) => {
-  const coolkiesBaseUrl = process.env.COOLKIES_BASE_URL ?? "http://localhost:3000";
-  const mcpPublicUrl = process.env.MCP_PUBLIC_URL ?? "http://localhost:3100";
+  const coolkiesBaseUrl = readEnvOrDefault("COOLKIES_BASE_URL", "http://localhost:3000");
+  const mcpPublicUrl = readEnvOrDefault("MCP_PUBLIC_URL", "http://localhost:3100");
   return c.json({
     resource: mcpPublicUrl,
     authorization_servers: [coolkiesBaseUrl],
@@ -30,7 +31,7 @@ app.get("/.well-known/oauth-protected-resource", (c) => {
 });
 
 function unauthorizedResponse(): Response {
-  const mcpPublicUrl = process.env.MCP_PUBLIC_URL ?? "http://localhost:3100";
+  const mcpPublicUrl = readEnvOrDefault("MCP_PUBLIC_URL", "http://localhost:3100");
   return new Response(JSON.stringify({ error: "Unauthorized: token ausente." }), {
     status: 401,
     headers: {
