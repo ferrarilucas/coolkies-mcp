@@ -14,3 +14,13 @@ app.use(
 );
 
 app.get("/health", (c) => c.json({ status: "ok" }));
+
+app.get("/.well-known/oauth-protected-resource", (c) => {
+  const coolkiesBaseUrl = process.env.COOLKIES_BASE_URL ?? "http://localhost:3000";
+  const mcpPublicUrl = process.env.MCP_PUBLIC_URL ?? "http://localhost:3100";
+  return c.json({
+    resource: mcpPublicUrl,
+    authorization_servers: [coolkiesBaseUrl],
+    bearer_methods_supported: ["header"],
+  });
+});
