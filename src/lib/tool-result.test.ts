@@ -21,4 +21,12 @@ describe("toolError", () => {
     const result = toolError("algo estranho");
     expect(result.content).toEqual([{ type: "text", text: "Erro inesperado." }]);
   });
+
+  it("acrescenta aviso para reconectar quando o CoolkiesApiError é 401", () => {
+    const result = toolError(new CoolkiesApiError(401, "Token expirado."));
+    expect(result.isError).toBe(true);
+    expect(result.content).toEqual([
+      { type: "text", text: "Token expirado. Reconecte o conector do coolkies-mcp para renovar o acesso." },
+    ]);
+  });
 });
