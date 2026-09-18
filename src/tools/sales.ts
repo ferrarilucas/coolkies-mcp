@@ -16,11 +16,19 @@ export type ListSalesArgs = {
   overdueOnly?: boolean;
 };
 
+const DATE_ONLY_FIELDS = ["from", "to", "forecastFrom", "forecastTo"] as const;
+
+function normalizeDateOnly(value: string): string {
+  return value.slice(0, 10);
+}
+
 export async function listSalesHandler(token: string, args: ListSalesArgs): Promise<CallToolResult> {
   try {
     const params = new URLSearchParams();
     for (const [key, value] of Object.entries(args)) {
-      if (value !== undefined) params.set(key, String(value));
+      if (value === undefined) continue;
+      const isDateOnlyField = (DATE_ONLY_FIELDS as readonly string[]).includes(key);
+      params.set(key, isDateOnlyField ? normalizeDateOnly(String(value)) : String(value));
     }
     const query = params.size > 0 ? `?${params.toString()}` : "";
     const data = await callCoolkiesApi(token, `/api/v1/sales${query}`);
@@ -51,7 +59,12 @@ export type CreateSaleArgs = {
 
 export async function createSaleHandler(token: string, args: CreateSaleArgs): Promise<CallToolResult> {
   try {
-    const data = await callCoolkiesApi(token, "/api/v1/sales", { method: "POST", body: args });
+    const body = {
+      ...args,
+      ...(args.soldAt !== undefined ? { soldAt: normalizeDateOnly(args.soldAt) } : {}),
+      ...(args.forecastDate !== undefined ? { forecastDate: normalizeDateOnly(args.forecastDate) } : {}),
+    };
+    const data = await callCoolkiesApi(token, "/api/v1/sales", { method: "POST", body });
     return toolJson(data);
   } catch (e) {
     return toolError(e);
@@ -84,10 +97,10 @@ export function registerSalesTools(server: McpServer): void {
         status: z.enum(["PAID", "PENDING"]).optional(),
         q: z.string().optional().describe("Busca livre por nome do cliente, setor, observações ou produto"),
         customerId: z.string().optional(),
-        from: z.string().optional().describe("Data inicial (ISO) da venda"),
-        to: z.string().optional().describe("Data final (ISO) da venda"),
-        forecastFrom: z.string().optional(),
-        forecastTo: z.string().optional(),
+        from: z.string().optional().describe("Data inicial da venda, no formato YYYY-MM-DD"),
+        to: z.string().optional().describe("Data final da venda, no formato YYYY-MM-DD"),
+        forecastFrom: z.string().optional().describe("Previsão de pagamento inicial, no formato YYYY-MM-DD"),
+        forecastTo: z.string().optional().describe("Previsão de pagamento final, no formato YYYY-MM-DD"),
         overdueOnly: z.boolean().optional().describe("Só vendas pendentes vencidas"),
       },
     },
@@ -102,10 +115,13 @@ export function registerSalesTools(server: McpServer): void {
       inputSchema: {
         customerId: z.string().optional(),
         customerName: z.string().optional(),
-        soldAt: z.string().optional().describe("Data da venda (ISO), padrão agora"),
+        soldAt: z.string().optional().describe("Data da venda no formato YYYY-MM-DD, padrão agora"),
         notes: z.string().optional(),
         status: z.enum(["PAID", "PENDING"]).optional().describe("Padrão PAID"),
-        forecastDate: z.string().optional().describe("Previsão de pagamento (ISO), só para PENDING"),
+        forecastDate: z
+          .string()
+          .optional()
+          .describe("Previsão de pagamento no formato YYYY-MM-DD, só para PENDING"),
         discountType: z.enum(["PERCENTAGE", "FIXED"]).optional(),
         discountValue: z.number().optional(),
         items: z
