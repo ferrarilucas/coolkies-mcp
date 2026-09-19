@@ -3,8 +3,8 @@ import { cors } from "hono/cors";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
-import { registerTools } from "./tools";
-import { readEnvOrDefault } from "./lib/env";
+import { registerTools } from "./tools/index.js";
+import { readEnvOrDefault } from "./lib/env.js";
 
 export const app = new Hono();
 

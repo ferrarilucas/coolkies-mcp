@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { toolError, toolJson } from "./tool-result";
-import { CoolkiesApiError } from "./coolkies-client";
+import { toolError, toolJson } from "./tool-result.js";
+import { CoolkiesApiError } from "./coolkies-client.js";
 
 describe("toolJson", () => {
   it("serializa o valor em um bloco de texto", () => {

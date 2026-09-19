@@ -1,4 +1,4 @@
-import { readEnvOrDefault } from "./env";
+import { readEnvOrDefault } from "./env.js";
 
 export class CoolkiesApiError extends Error {
   constructor(

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { callCoolkiesApi, CoolkiesApiError } from "./coolkies-client";
+import { callCoolkiesApi, CoolkiesApiError } from "./coolkies-client.js";
 
 afterEach(() => {
   vi.unstubAllGlobals();

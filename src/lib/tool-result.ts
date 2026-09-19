@@ -1,5 +1,5 @@
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
-import { CoolkiesApiError } from "./coolkies-client";
+import { CoolkiesApiError } from "./coolkies-client.js";
 
 export function toolJson(data: unknown): CallToolResult {
   return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };

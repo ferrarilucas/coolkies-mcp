@@ -1,9 +1,9 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
-import { callCoolkiesApi } from "../lib/coolkies-client";
-import { toolError, toolJson } from "../lib/tool-result";
-import { requireToken } from "./auth";
+import { callCoolkiesApi } from "../lib/coolkies-client.js";
+import { toolError, toolJson } from "../lib/tool-result.js";
+import { requireToken } from "./auth.js";
 
 export async function listCustomersHandler(token: string, args: { q?: string }): Promise<CallToolResult> {
   try {

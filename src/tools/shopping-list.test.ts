@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { addShoppingListItemHandler, listShoppingListItemsHandler } from "./shopping-list";
+import { addShoppingListItemHandler, listShoppingListItemsHandler } from "./shopping-list.js";
 
 afterEach(() => {
   vi.unstubAllGlobals();

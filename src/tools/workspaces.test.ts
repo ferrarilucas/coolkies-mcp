@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { listWorkspacesHandler, setActiveWorkspaceHandler } from "./workspaces";
+import { listWorkspacesHandler, setActiveWorkspaceHandler } from "./workspaces.js";
 
 afterEach(() => {
   vi.unstubAllGlobals();

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { readEnvOrDefault } from "./env";
+import { readEnvOrDefault } from "./env.js";
 
 afterEach(() => {
   delete process.env.SOME_TEST_VAR;

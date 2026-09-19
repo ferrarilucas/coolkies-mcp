@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createSaleHandler, listSalesHandler, markSalesAsPaidHandler } from "./sales";
+import { createSaleHandler, listSalesHandler, markSalesAsPaidHandler } from "./sales.js";
 
 afterEach(() => {
   vi.unstubAllGlobals();
