@@ -76,7 +76,8 @@ Em produção, configure `COOLKIES_BASE_URL` e `MCP_PUBLIC_URL` com as URLs reai
 ```bash
 pnpm test          # roda tudo uma vez
 pnpm test:watch    # modo watch
-pnpm build         # type-check (tsc --noEmit, via tsconfig)
+pnpm build         # compila pra dist/ (e já serve como type-check)
+pnpm start         # roda o build (node dist/src/index.js)
 ```
 
 Os testes não sobem um coolkies-system de verdade — o `fetch` é mockado em cada teste. A única exceção é `src/mcp-e2e.test.ts`, que sobe este servidor local numa porta efêmera e usa o SDK oficial do MCP (`Client` + `StreamableHTTPClientTransport`) pra fazer uma chamada real de ponta a ponta contra ele.
