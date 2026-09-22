@@ -8,6 +8,13 @@ import { readEnvOrDefault } from "./lib/env.js";
 
 export const app = new Hono();
 
+app.use("*", async (c, next) => {
+  const hasAuth = Boolean(c.req.header("authorization"));
+  console.log(`[coolkies-mcp] -> ${c.req.method} ${c.req.path} auth=${hasAuth}`);
+  await next();
+  console.log(`[coolkies-mcp] <- ${c.req.method} ${c.req.path} status=${c.res.status}`);
+});
+
 app.use(
   "*",
   cors({
