@@ -58,9 +58,27 @@ app.all("/mcp", async (c) => {
   const token = c.req.header("authorization")?.replace(/^Bearer\s+/i, "").trim();
   if (!token) return unauthorizedResponse();
 
+  if (c.req.method === "POST") {
+    const bodyText = await c.req.raw
+      .clone()
+      .text()
+      .catch(() => "<falha ao ler corpo>");
+    console.log(`[coolkies-mcp] corpo /mcp: ${bodyText.slice(0, 800)}`);
+  }
+
   const authInfo: AuthInfo = { token, clientId: "coolkies-mcp-client", scopes: [] };
   const transport = new WebStandardStreamableHTTPServerTransport();
   const server = createServer();
   await server.connect(transport);
-  return transport.handleRequest(c.req.raw, { authInfo });
+  const response = await transport.handleRequest(c.req.raw, { authInfo });
+
+  if (!response.ok) {
+    const errorBody = await response
+      .clone()
+      .text()
+      .catch(() => "<falha ao ler corpo>");
+    console.log(`[coolkies-mcp] erro /mcp status=${response.status}: ${errorBody.slice(0, 800)}`);
+  }
+
+  return response;
 });
