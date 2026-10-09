@@ -44,6 +44,8 @@ export type CreateSaleArgs = {
   soldAt?: string;
   notes?: string;
   status?: "PAID" | "PENDING";
+  installments?: number;
+  forecastPreset?: "DAY_FIVE" | "FIFTH_BUSINESS_DAY" | "CUSTOM";
   forecastDate?: string;
   discountType?: "PERCENTAGE" | "FIXED";
   discountValue?: number;
@@ -72,6 +74,7 @@ export async function createSaleHandler(token: string, args: CreateSaleArgs): Pr
 }
 
 export type MarkSalesAsPaidArgs = {
+  installmentIds?: string[];
   saleId?: string;
   saleIds?: string[];
   customerId?: string;
@@ -92,7 +95,7 @@ export function registerSalesTools(server: McpServer): void {
     {
       title: "Listar vendas",
       description:
-        "Lista vendas do workspace ativo com os mesmos filtros da tela de vendas, e retorna um resumo (total pendente, total vencido). Use customerId + status: PENDING para saber quanto um cliente deve.",
+        "Lista vendas do workspace ativo com os mesmos filtros da tela de vendas, e retorna um resumo (total pendente, total vencido). Use customerId + status: PENDING para saber quanto um cliente deve. Cada venda traz installments (parcelas com id, number, amountCents, dueDate, paidAt) e openCents (valor em aberto).",
       inputSchema: {
         status: z.enum(["PAID", "PENDING"]).optional(),
         q: z.string().optional().describe("Busca livre por nome do cliente, setor, observações ou produto"),
@@ -118,10 +121,21 @@ export function registerSalesTools(server: McpServer): void {
         soldAt: z.string().optional().describe("Data da venda no formato YYYY-MM-DD, padrão agora"),
         notes: z.string().optional(),
         status: z.enum(["PAID", "PENDING"]).optional().describe("Padrão PAID"),
+        installments: z
+          .number()
+          .int()
+          .min(1)
+          .max(24)
+          .optional()
+          .describe("Número de parcelas mensais. 1 ou omitido = à vista; de 2 a 24 = parcelado"),
+        forecastPreset: z
+          .enum(["DAY_FIVE", "FIFTH_BUSINESS_DAY", "CUSTOM"])
+          .optional()
+          .describe("Regra de vencimento: dia 5, 5º dia útil ou data em forecastDate; repetida mês a mês no parcelado"),
         forecastDate: z
           .string()
           .optional()
-          .describe("Previsão de pagamento no formato YYYY-MM-DD, só para PENDING"),
+          .describe("Previsão de pagamento (à vista PENDING) ou vencimento da 1ª parcela, no formato YYYY-MM-DD"),
         discountType: z.enum(["PERCENTAGE", "FIXED"]).optional(),
         discountValue: z.number().optional(),
         items: z
@@ -145,8 +159,10 @@ export function registerSalesTools(server: McpServer): void {
     "mark_sales_as_paid",
     {
       title: "Marcar vendas como pagas",
-      description: "Marca uma venda, uma lista de vendas, ou todas as vendas pendentes de um cliente como pagas.",
+      description:
+        "Registra pagamento de parcelas. Com installmentIds quita exatamente essas parcelas (inclusive futuras). Com saleId, saleIds ou customerId quita só as parcelas vencidas até hoje.",
       inputSchema: {
+        installmentIds: z.array(z.string()).optional(),
         saleId: z.string().optional(),
         saleIds: z.array(z.string()).optional(),
         customerId: z.string().optional(),

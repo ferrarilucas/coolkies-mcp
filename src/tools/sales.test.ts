@@ -99,3 +99,37 @@ describe("markSalesAsPaidHandler", () => {
     expect(result.isError).toBeFalsy();
   });
 });
+
+function lastRequestBody(): unknown {
+  const calls = vi.mocked(globalThis.fetch).mock.calls;
+  return JSON.parse(String(calls.at(-1)?.[1]?.body));
+}
+
+describe("parcelamento", () => {
+  it("create_sale envia parcelamento e normaliza a data da 1ª parcela", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(JSON.stringify({ sale: { id: "s1" } }), { status: 201 })),
+    );
+
+    await createSaleHandler("tok", {
+      installments: 3,
+      forecastPreset: "CUSTOM",
+      forecastDate: "2026-10-20T00:00:00.000Z",
+      items: [{ itemId: "i1", productName: "Bolo", quantity: 1, unitPriceCents: 10000 }],
+    });
+
+    expect(lastRequestBody()).toMatchObject({ installments: 3, forecastPreset: "CUSTOM", forecastDate: "2026-10-20" });
+  });
+
+  it("mark_sales_as_paid repassa installmentIds", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(JSON.stringify({ count: 2, totalCents: 5000 }), { status: 200 })),
+    );
+
+    await markSalesAsPaidHandler("tok", { installmentIds: ["p1", "p2"] });
+
+    expect(lastRequestBody()).toEqual({ installmentIds: ["p1", "p2"] });
+  });
+});
