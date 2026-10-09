@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createSaleHandler, listSalesHandler, markSalesAsPaidHandler } from "./sales.js";
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { createSaleHandler, listSalesHandler, markSalesAsPaidHandler, registerSalesTools } from "./sales.js";
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -131,5 +134,89 @@ describe("parcelamento", () => {
     await markSalesAsPaidHandler("tok", { installmentIds: ["p1", "p2"] });
 
     expect(lastRequestBody()).toEqual({ installmentIds: ["p1", "p2"] });
+  });
+});
+
+async function connectSalesTools(): Promise<Client> {
+  const server = new McpServer({ name: "test-server", version: "1.0.0" });
+  registerSalesTools(server);
+  const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+  await server.connect(serverTransport);
+  const originalOnMessage = serverTransport.onmessage;
+  serverTransport.onmessage = (message, extra) =>
+    originalOnMessage?.(message, { ...extra, authInfo: { token: "tok", clientId: "test", scopes: [] } });
+  const client = new Client({ name: "test-client", version: "1.0.0" });
+  await client.connect(clientTransport);
+  return client;
+}
+
+describe("schemas das tools de parcelamento", () => {
+  it("create_sale aceita installments 3 com forecastPreset CUSTOM e repassa ao API", async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ sale: { id: "s1" } }), { status: 201 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const client = await connectSalesTools();
+
+    const result = await client.callTool({
+      name: "create_sale",
+      arguments: {
+        installments: 3,
+        forecastPreset: "CUSTOM",
+        forecastDate: "2026-10-20",
+        items: [{ itemId: "i1", productName: "Bolo", quantity: 1, unitPriceCents: 10000 }],
+      },
+    });
+
+    expect(result.isError).toBeFalsy();
+    expect(lastRequestBody()).toMatchObject({ installments: 3, forecastPreset: "CUSTOM", forecastDate: "2026-10-20" });
+    await client.close();
+  });
+
+  it.each([0, 25])("create_sale rejeita installments %i fora de 1..24", async (installments) => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ sale: { id: "s1" } }), { status: 201 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const client = await connectSalesTools();
+
+    await expect(
+      client.callTool({
+        name: "create_sale",
+        arguments: {
+          installments,
+          items: [{ itemId: "i1", productName: "Bolo", quantity: 1, unitPriceCents: 10000 }],
+        },
+      }),
+    ).resolves.toMatchObject({ isError: true });
+    expect(fetchMock).not.toHaveBeenCalled();
+    await client.close();
+  });
+
+  it("create_sale rejeita forecastPreset fora do enum", async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ sale: { id: "s1" } }), { status: 201 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const client = await connectSalesTools();
+
+    await expect(
+      client.callTool({
+        name: "create_sale",
+        arguments: {
+          installments: 2,
+          forecastPreset: "BOGUS",
+          items: [{ itemId: "i1", productName: "Bolo", quantity: 1, unitPriceCents: 10000 }],
+        },
+      }),
+    ).resolves.toMatchObject({ isError: true });
+    expect(fetchMock).not.toHaveBeenCalled();
+    await client.close();
+  });
+
+  it("mark_sales_as_paid aceita installmentIds e repassa ao API", async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ count: 1, totalCents: 5000 }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const client = await connectSalesTools();
+
+    const result = await client.callTool({ name: "mark_sales_as_paid", arguments: { installmentIds: ["p1"] } });
+
+    expect(result.isError).toBeFalsy();
+    expect(lastRequestBody()).toEqual({ installmentIds: ["p1"] });
+    await client.close();
   });
 });
